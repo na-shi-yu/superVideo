@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hurys.video.mapper.DeviceInfoMapper">
+
+	<select id="getDeviceInfo" resultType="com.hurys.video.entity.DeviceRadar">
+		SELECT r.device_no "deviceNo",
+			   t.name "deviceName",
+		       t.model "mdoel",
+			   r.ipv4 "ipv4",
+			   r.ipv6 "ipv6",
+			   r.login_name "loginName",
+			   r.login_password "loginPassword"
+		FROM t_device t, t_radar_config r
+		WHERE t.device_no = r.device_no
+		  AND t.`type` = "radar"
+		  AND t.inmaintaince = 0
+		  AND t.model IN ("D39-V")
+	</select>
+
+</mapper>

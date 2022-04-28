@@ -1,0 +1,10 @@
+server:
+  port: 18081
+
+
+spring:
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    url: jdbc:mysql://192.168.0.66:3306/hurys_rtp_2.0?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=UTF-8&useSSL=false&tinyInt1isBit=false
+    username: root
+    password: hurys@123
