@@ -40,26 +40,42 @@ public class RealPlayServiceImpl implements RealPlayService {
      */
     public static final Map<String,CameraThread> PLAYERJOB = new HashMap<String,CameraThread>();
 
+    /**
+     * nginx的ip
+     */
     @Value("${nginx.ip}")
     private String nginxIp;
 
+    /**
+     * rtmp的推送端口
+     */
     @Value("${nginx.rtmpPort}")
     private String rtmpPort;
 
+    /**
+     * rtmp的path
+     */
     @Value("${nginx.rtmpPath}")
     private String rtmpPath;
 
+    /**
+     * flv的端口号
+     */
     @Value("${nginx.flvPort}")
     private String flvPort;
 
     @Resource
     private Start start;
 
+    /**
+     * 视频心跳超时时间
+     */
     public static final int TIMEOUT = 60;
+
     /**
      * 播放
-     * @param params
-     * @return
+     * @param params json
+     * @return api
      */
     @Override
     public ApiResult realPlay(JSONObject params) {
@@ -92,7 +108,8 @@ public class RealPlayServiceImpl implements RealPlayService {
             result.put("rtspPlayUrl",rtspPlayUrl);
             result.put("flvPlayUrl" ,flvPlayUrl);
         }catch (Exception e){
-            e.printStackTrace();
+//            e.printStackTrace();
+            log.error("视频播放失败,{}" ,e.getMessage());
             return ApiResult.fail("视频播放失败");
         }
         return ApiResult.ok(result);
@@ -101,8 +118,8 @@ public class RealPlayServiceImpl implements RealPlayService {
 
     /**
      * 心跳
-     * @param params
-     * @return
+     * @param params json
+     * @return api
      */
     @Override
     public ApiResult heatBeat(JSONObject params) {
@@ -113,21 +130,21 @@ public class RealPlayServiceImpl implements RealPlayService {
                 SUBSCRIBE.put(deviceNo,TIMEOUT);
             }
         }catch (Exception e){
-            e.printStackTrace();
+//            e.printStackTrace();
+            log.error("心跳异常,{}" ,e.getMessage());
         }
         return ApiResult.ok();
     }
 
     /**
-     * 心跳监测
+     * 心跳监测 1s执行一次
      */
     @PostConstruct
     public void heartBeat() {
-        /**使用Executors工具快速构建对象*/
         log.info("心跳监测线程开启");
-        ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+        ScheduledExecutorService heatBeat = new ScheduledThreadPoolExecutor(1);
         try {
-            scheduledExecutor.scheduleWithFixedDelay(
+            heatBeat.scheduleWithFixedDelay(
                     new Runnable() {
                         @Override
                         public void run() {
@@ -136,7 +153,7 @@ public class RealPlayServiceImpl implements RealPlayService {
                                 while (iterator.hasNext()) {
                                     Map.Entry<String, Integer> next = iterator.next();
                                     String key = next.getKey();
-                                    log.info("心跳监测：{}",next.toString());
+//                                    log.info("心跳监测：{}",next.toString());
                                     synchronized (SUBSCRIBE) {
                                         SUBSCRIBE.merge(key, -1, Integer::sum);
                                         if (SUBSCRIBE.get(key).intValue() < 0) {
@@ -147,14 +164,14 @@ public class RealPlayServiceImpl implements RealPlayService {
                                     }
                                 }
                             } catch (Exception e) {
-                                e.printStackTrace();
-                                log.error("心跳监测异常：" + e.getMessage());
+                               // e.printStackTrace();
+                                log.error("心跳监测异常：{}" + e.getMessage());
                             }
                         }
                     },
                     0, 1, TimeUnit.SECONDS);
         } catch (Exception e) {
-            log.error("心跳监测异常：" + e.getMessage());
+            log.error("心跳监测异常：{}" + e.getMessage());
         }
     }
 }
