@@ -1,15 +1,15 @@
 package com.hurys.video.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.hurys.video.common.ApiResult;
 import com.hurys.video.entity.CameraPojo;
 import com.hurys.video.service.CameraThread;
 import com.hurys.video.service.RealPlayService;
 import com.hurys.video.service.Start;
-import lombok.Synchronized;
+import com.hurys.video.utils.Ping;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.HashMap;
@@ -28,69 +28,94 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 @Service
 public class RealPlayServiceImpl implements RealPlayService {
-
     /**
      * 订阅
      * key:设备编号，value：过期时间，单位s
      */
-    public static Map<String,Integer> SUBSCRIBE = new HashMap<String,Integer>();
+    public static final Map<String,Integer> SUBSCRIBE = new HashMap<String,Integer>();
 
     /**
      * 设备线程
      * key 设备编号  value 线程
      */
-    public static Map<String,CameraThread> PLAYERJOB = new HashMap<String,CameraThread>();
+    public static final Map<String,CameraThread> PLAYERJOB = new HashMap<String,CameraThread>();
 
+    @Value("${nginx.ip}")
+    private String nginxIp;
+
+    @Value("${nginx.rtmpPort}")
+    private String rtmpPort;
+
+    @Value("${nginx.rtmpPath}")
+    private String rtmpPath;
+
+    @Value("${nginx.flvPort}")
+    private String flvPort;
 
     @Resource
     private Start start;
 
+    public static final int TIMEOUT = 60;
+    /**
+     * 播放
+     * @param params
+     * @return
+     */
     @Override
-    public JSONObject realPlay(JSONObject params) {
+    public ApiResult realPlay(JSONObject params) {
         JSONObject result = new JSONObject();
         try{
             String ip = params.getString("ip");
             String port = params.getString("port");
+            boolean flag = Ping.pingHost(ip, Integer.parseInt(port));
+            if (!flag){
+                return ApiResult.fail("请检测网络联通性");
+            }
             String username = params.getString("username");
             String password = params.getString("password");
             // 1主通道 2次通道
             String channel = params.getString("channel");
-          //  String streamPass = params.getString("streamPass");
             String deviceNo = params.getString("deviceNo");
-            String rtsp = "rtsp://" + username + ":" + password + "@" + ip + ":" + port + "/" + channel;
-            String rtmp = "rtmp://" + "192.168.10.67" + ":" + "18123" + "/myapp/" + deviceNo;
-           // String playUrl = params.getString("playUrl");
+            String rtspPlayUrl = "rtsp://" + username + ":" + password + "@" + ip + ":" + port + "/" + channel;
+            String rtmpPlayUrl = "rtmp://" + nginxIp + ":" + rtmpPort + "/" + rtmpPath + "/" + deviceNo;
+            String flvPlayUrl = "http://" + nginxIp + ":" + flvPort + "/live?port=" +rtmpPort + "&app=" + rtmpPath + "&stream=" + deviceNo;
             if (!SUBSCRIBE.containsKey(deviceNo)){
                 CameraPojo cameraPojo = new CameraPojo();
-                cameraPojo.setRtmp(rtmp);
-                cameraPojo.setRtsp(rtsp);
-                start.start(deviceNo,cameraPojo);
+                cameraPojo.setRtmp(rtmpPlayUrl);
+                cameraPojo.setRtsp(rtspPlayUrl);
+                start.play(deviceNo,cameraPojo);
             }
             synchronized(SUBSCRIBE){
-                SUBSCRIBE.put(deviceNo,60);
+                SUBSCRIBE.put(deviceNo,TIMEOUT);
             }
-            //返回一个http flv播放地址
-            result.put("playUrl" ,"http://192.168.10.67:18500/live?port=18123&app=myapp&stream=" + deviceNo);
+            result.put("rtmpPlayUrl",rtmpPlayUrl);
+            result.put("rtspPlayUrl",rtspPlayUrl);
+            result.put("flvPlayUrl" ,flvPlayUrl);
         }catch (Exception e){
             e.printStackTrace();
+            return ApiResult.fail("视频播放失败");
         }
-        return result;
+        return ApiResult.ok(result);
     }
 
 
-
+    /**
+     * 心跳
+     * @param params
+     * @return
+     */
     @Override
-    public JSONObject heatBeat(JSONObject params) {
+    public ApiResult heatBeat(JSONObject params) {
         try {
             String deviceNo = params.getString("deviceNo");
             //采用过期模式
             synchronized(SUBSCRIBE){
-                SUBSCRIBE.put(deviceNo,60);
+                SUBSCRIBE.put(deviceNo,TIMEOUT);
             }
         }catch (Exception e){
             e.printStackTrace();
         }
-        return null;
+        return ApiResult.ok();
     }
 
     /**

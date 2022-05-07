@@ -2,6 +2,12 @@ server:
   port: 18081
 
 
+nginx:
+  ip: 192.168.10.67
+  rtmpPort: 18123
+  rtmpPath: 'myapp'
+  flvPort: 18500
+
 spring:
   datasource:
     driverClassName: com.mysql.jdbc.Driver

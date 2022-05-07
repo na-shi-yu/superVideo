@@ -1,6 +1,7 @@
 package com.hurys.video.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.hurys.video.common.ApiResult;
 
 /**
  * @author YYK
@@ -15,12 +16,12 @@ public interface RealPlayService {
      * @return
      * @param params
      */
-    JSONObject realPlay(JSONObject params);
+    ApiResult realPlay(JSONObject params);
 
     /**
      * 心跳
      * @param params
      * @return
      */
-    JSONObject heatBeat(JSONObject params);
+    ApiResult heatBeat(JSONObject params);
 }

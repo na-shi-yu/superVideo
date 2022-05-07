@@ -10,13 +10,18 @@ import static com.hurys.video.service.impl.RealPlayServiceImpl.PLAYERJOB;
  * @author YYK
  * @version 1.0
  * @date 2022/5/6 17:25
- * @Description:
+ * @Description: 启动类
  */
 @Component
 public class Start {
 
+    /**
+     * 启动线程
+     * @param deviceNo
+     * @param cameraPojo
+     */
     @Async
-    public void start(String deviceNo, CameraPojo cameraPojo){
+    public void play(String deviceNo, CameraPojo cameraPojo){
         CameraThread job = new CameraThread(cameraPojo);
         PLAYERJOB.put(deviceNo,job);
         job.run();
