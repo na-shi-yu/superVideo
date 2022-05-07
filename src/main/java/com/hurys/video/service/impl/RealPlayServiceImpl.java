@@ -125,6 +125,9 @@ public class RealPlayServiceImpl implements RealPlayService {
     public ApiResult heatBeat(JSONObject params) {
         try {
             String deviceNo = params.getString("deviceNo");
+            if (!PLAYERJOB.containsKey(deviceNo)){
+                return ApiResult.fail("暂未播放该视频，心跳无效");
+            }
             //采用过期模式
             synchronized(SUBSCRIBE){
                 SUBSCRIBE.put(deviceNo,TIMEOUT);
@@ -153,13 +156,14 @@ public class RealPlayServiceImpl implements RealPlayService {
                                 while (iterator.hasNext()) {
                                     Map.Entry<String, Integer> next = iterator.next();
                                     String key = next.getKey();
-//                                    log.info("心跳监测：{}",next.toString());
+                                    log.info("心跳监测：{}",next.toString());
                                     synchronized (SUBSCRIBE) {
                                         SUBSCRIBE.merge(key, -1, Integer::sum);
                                         if (SUBSCRIBE.get(key).intValue() < 0) {
                                             //超时，去除订阅，关闭线程
                                             SUBSCRIBE.remove(key);
                                             PLAYERJOB.get(key).setInterrupted();
+                                            PLAYERJOB.remove(key);
                                         }
                                     }
                                 }

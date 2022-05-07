@@ -40,7 +40,7 @@ public class PlayController {
      */
     @PostMapping("/heatBeat")
     public ApiResult playHeatBeat(@RequestBody JSONObject params) {
-        return ApiResult.ok(realPlayService.heatBeat(params));
+        return realPlayService.heatBeat(params);
     }
 
 }
