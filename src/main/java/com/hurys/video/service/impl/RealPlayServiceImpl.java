@@ -70,7 +70,7 @@ public class RealPlayServiceImpl implements RealPlayService {
     /**
      * 视频心跳超时时间
      */
-    public static final int TIMEOUT = 60;
+    public static final int TIMEOUT = 120;
 
     /**
      * 播放
